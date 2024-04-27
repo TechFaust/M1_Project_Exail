@@ -9,7 +9,8 @@ public class Main {
         String directoryPath = "C:\\Users\\lgair\\Downloads\\iperf3.16_64\\iperf3.16_64";
 
         // Command to be executed
-        String command = "iperf3 -s -p 8888"; // Example command, you can replace it with any command you want to run
+        String command = "iperf3 -s -p 8888";
+        // String command = "iperf3 -c X.X.X.X -p 8888";
 
         // Create a ProcessBuilder
         ProcessBuilder builder = new ProcessBuilder("cmd.exe", "/c", command);
