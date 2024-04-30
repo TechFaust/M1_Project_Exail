@@ -1,9 +1,11 @@
+package m1.exail;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.File;
 
-public class Main {
+public class App {
 
     public static void main(String[] args) {
         String directoryPath = "C:\\Users\\lgair\\Downloads\\iperf3.16_64\\iperf3.16_64";
@@ -36,8 +38,6 @@ public class Main {
             // Close the reader
             reader.close();
 
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException | InterruptedException ignored) { }
     }
 }
