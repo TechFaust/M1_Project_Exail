@@ -9,6 +9,7 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     application
+    kotlin("jvm") version "1.9.23"
 }
 
 repositories {
@@ -22,9 +23,13 @@ dependencies {
 
     // This dependency is used by the application.
     implementation("commons-net:commons-net:3.9.0")
+    implementation(kotlin("stdlib-jdk8"))
 }
 
 application {
     // Define the main class for the application.
-    mainClass.set("m1_project_exail.App")
+    mainClass.set("m1.exail.App")
+}
+kotlin {
+    jvmToolchain(21)
 }
