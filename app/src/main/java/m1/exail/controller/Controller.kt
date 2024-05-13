@@ -78,7 +78,7 @@ class Controller: PropertyChangeListener {
         when (evt?.propertyName) {
             DRONE_SEARCH -> {
                 try {
-                    pcs.firePropertyChange(DRONE_IP_CHANGED, null, getDroneAddress())
+                    getDroneAddress()
                 } catch (e: Exception) {
                     pcs.firePropertyChange(DRONE_IP_CHANGED, null, e)
                 }

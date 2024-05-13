@@ -22,8 +22,10 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
 
     // This dependency is used by the application.
-    implementation("commons-net:commons-net:3.9.0")
     implementation(kotlin("stdlib-jdk8"))
+
+    implementation("commons-net:commons-net:3.9.0")
+    implementation("org.json:json:20231013")
 }
 
 application {

@@ -33,3 +33,4 @@ bin/
 
 # Ignore Gradle build output directory
 build
+/app/src/main/resources/iperf3/

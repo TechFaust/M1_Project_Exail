@@ -9,6 +9,15 @@ import java.beans.PropertyChangeSupport
 import java.lang.Exception
 import java.net.InetAddress
 import javax.swing.JFrame
+import javax.swing.SwingWorker
+
+
+private class SpeedTester(private val caller: MainFrame, private val address: InetAddress) : SwingWorker<Void, Void>() {
+    override fun doInBackground(): Void? {
+        caller.pcs.firePropertyChange(Controller.CONNECTION_SPEED_REQUEST, null, address)
+        return null
+    }
+}
 
 class MainFrame : JFrame(), PropertyChangeListener {
     val pcs = PropertyChangeSupport(this)
@@ -48,7 +57,7 @@ class MainFrame : JFrame(), PropertyChangeListener {
             }
             Controller.FTP_CONNECTED -> {
                 if(evt.newValue == null){
-                    topBar.setDroneStatus(Exception(""))
+                    topBar.setDroneStatus(emptyList<InetAddress>())
                     remove(fileExplorer)
                     fileExplorer = FileExplorer(this)
                     add(fileExplorer, BorderLayout.CENTER)
@@ -56,6 +65,7 @@ class MainFrame : JFrame(), PropertyChangeListener {
                     topBar.setDroneStatus(evt.newValue as InetAddress)
                     fileExplorer.setFileList(emptyList())
                     fileExplorer.path = "/"
+                    SpeedTester(this, evt.newValue as InetAddress).execute()
                 }
             }
             Controller.CONNECTION_SPEED_CHANGED -> {
@@ -66,8 +76,8 @@ class MainFrame : JFrame(), PropertyChangeListener {
             Controller.FTP_FILE_LIST_CHANGED -> {
                 assert(evt.newValue is List<*>)
                 assert((evt.newValue as List<*>).all { it is FTPFile })
+
                 fileExplorer.setFileList(evt.newValue as List<FTPFile>)
-                pcs.firePropertyChange(Controller.CONNECTION_SPEED_REQUEST, null, null)
             }
         }
     }

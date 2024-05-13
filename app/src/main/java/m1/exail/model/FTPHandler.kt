@@ -8,7 +8,6 @@ import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
 import java.io.File
-import java.time.Instant
 
 
 class FTPHandler(private val address: InetAddress, port: Int = 21) : PropertyChangeListener {
@@ -35,27 +34,6 @@ class FTPHandler(private val address: InetAddress, port: Int = 21) : PropertyCha
         return client.listFiles(path).toList()
     }
 
-    private fun updateSpeed() {
-        val speedFile = "app/src/main/resources/speed.txt"
-
-        File(speedFile).writeText(ByteArray(1024 * 1024 * 1024).toString()) // 1GB file
-        var start = Instant.now()
-        client.storeFile("speed.txt", File(speedFile).inputStream())
-        var end = Instant.now()
-        val uploadTime = end.toEpochMilli() - start.toEpochMilli()
-        val uploadSpeed = 1024 * 1024 * 1024 / uploadTime.toDouble()
-
-        start = Instant.now()
-        client.retrieveFile("speed.txt", File(speedFile).outputStream())
-        end = Instant.now()
-        val downloadTime = end.toEpochMilli() - start.toEpochMilli()
-        val downloadSpeed = 1024 * 1024 * 1024 / downloadTime.toDouble()
-
-        File(speedFile).delete()
-        client.deleteFile("speed.txt")
-
-        pcs.firePropertyChange(Controller.CONNECTION_SPEED_CHANGED, null, Pair(downloadSpeed, uploadSpeed))
-    }
 
     override fun propertyChange(evt: PropertyChangeEvent?) {
         println("FTPHandler received event: ${evt?.propertyName} from ${evt?.source}")
@@ -78,7 +56,8 @@ class FTPHandler(private val address: InetAddress, port: Int = 21) : PropertyCha
                 client.storeFile(remote, target.inputStream())
             }
             Controller.CONNECTION_SPEED_REQUEST -> {
-                updateSpeed()
+                val speed = getSpeed(address, 20000)
+                pcs.firePropertyChange(Controller.CONNECTION_SPEED_CHANGED, null, speed)
             }
         }
     }

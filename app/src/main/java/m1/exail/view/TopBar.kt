@@ -3,6 +3,7 @@ package m1.exail.view
 import m1.exail.controller.Controller
 import java.awt.BorderLayout
 import java.awt.Font
+import java.awt.GridLayout
 import java.lang.Exception
 import java.net.InetAddress
 import javax.swing.JButton
@@ -44,6 +45,7 @@ private class Search(private val caller: TopBar) : SwingWorker<Void, Void>() {
     }
 }
 
+
 class TopBar(val caller: MainFrame ) : JPanel() {
     private val addressLabel: JLabel = JLabel("", SwingConstants.LEFT)
     private val informationLabel: JLabel = JLabel("", SwingConstants.CENTER)
@@ -56,7 +58,7 @@ class TopBar(val caller: MainFrame ) : JPanel() {
     var selectedDrone: InetAddress? = null
 
     init {
-        layout = BorderLayout(20,20)
+        layout = GridLayout(1,3, 20, 20)
         border = LineBorder(java.awt.Color.BLACK)
 
         searchButton.addActionListener {
@@ -71,48 +73,57 @@ class TopBar(val caller: MainFrame ) : JPanel() {
             caller.pcs.firePropertyChange(Controller.FTP_CONNECTION, null, null)
         }
 
-        add(addressLabel, BorderLayout.WEST)
-        add(informationLabel, BorderLayout.CENTER)
-        add(searchButton, BorderLayout.EAST)
-    }
-
-    fun setInformationLabelText(speed: Double) {
-        informationLabel.text = "Débit de connexion : $speed Mbps"
+        add(addressLabel)
+        add(informationLabel)
+        add(searchButton)
     }
 
     fun setDroneStatus(exception: Exception){
+        removeAll()
+
+        add(JLabel(("")))  // case vide
+        add(informationLabel)
+        add(searchButton, BorderLayout.EAST)
+
         informationLabel.text = "Erreur : ${exception.message}"
         informationLabel.foreground = java.awt.Color.RED
         informationLabel.font = Font(informationLabel.font.fontName, Font.BOLD, informationLabel.font.size)
+
+        revalidate()
     }
 
     fun setDroneStatus(adresses: List<InetAddress>){
+        if(adresses.isEmpty())
+            return setDroneStatus(Exception("Aucun drone trouvé sur le réseau"))
+
         removeAll()
-        if(adresses.isEmpty()){
-            add(informationLabel, BorderLayout.CENTER)
-            setDroneStatus(Exception("Aucun drone trouvé sur le réseau"))
-        } else {
-            add(addressLabel, BorderLayout.WEST)
-            droneSelector = DroneSelector(this, adresses.map { ComboItem(it) })
-            add(droneSelector, BorderLayout.CENTER)
-            add(connectionButton, BorderLayout.EAST)
-            addressLabel.text = "  ${adresses.size} drones trouvés sur le réseau"
-            connectionButton.text = "Se connecter"
-        }
+
+        add(addressLabel)
+        droneSelector = DroneSelector(this, adresses.map { ComboItem(it) })
+        add(droneSelector)
+        add(connectionButton)
+
+        addressLabel.text = "  ${adresses.size} drones trouvés sur le réseau"
+
+        revalidate()
     }
 
     fun setDroneStatus(address: InetAddress){
         removeAll()
-        add(addressLabel, BorderLayout.WEST)
-        add(informationLabel, BorderLayout.CENTER)
-        add(deconnectionButton, BorderLayout.EAST)
+
+        add(addressLabel)
+        add(informationLabel)
+        add(deconnectionButton)
+
         addressLabel.text = "  Adresse du drone : ${address.hostAddress}"
         informationLabel.text = "Connecté au drone"
         informationLabel.foreground = java.awt.Color.GREEN
         informationLabel.font = Font(informationLabel.font.fontName, Font.BOLD, informationLabel.font.size)
+
+        revalidate()
     }
 
-    private fun Scale(value: Double): String {
+    private fun scale(value: Double): String {
         return when {
             value < 1_000 -> "${floor(value)} B/s"
             value < 1_000_000 -> "${floor(value / 1_000)} KB/s"
@@ -122,7 +133,7 @@ class TopBar(val caller: MainFrame ) : JPanel() {
     }
 
     fun setDroneStatus(upload: Double, download: Double){
-        informationLabel.text = "Débit de connexion : ${Scale(upload)} (upload) / ${Scale(download)} (download)"
+        informationLabel.text = "Débit de connexion : ${scale(upload)} (upload) / ${scale(download)} (download)"
         informationLabel.foreground = java.awt.Color.BLACK
     }
 }

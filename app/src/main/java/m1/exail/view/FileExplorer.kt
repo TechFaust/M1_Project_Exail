@@ -32,18 +32,18 @@ class FileExplorer(private val caller: MainFrame) : JPanel() {
         add(pathDisplay, BorderLayout.NORTH)
         fileDisplay.removeAll()
         fileDisplay.layout = FlowLayout(FlowLayout.LEFT, 10, 10)
+
         val dirs = incomingFiles.filter { it.isDirectory }.sortedBy { it.name }
         val files = incomingFiles.filter { !it.isDirectory }.sortedBy { it.name }
+
         fileDisplay.add(FolderUi(this, ".."))  // Add the parent directory
         fileDisplay.add(FolderUi(this, "."))  // Add the current directory
-        for(f in dirs){
-            fileDisplay.add(FolderUi(this, f.name))
-        }
-        for(f in files){
-            fileDisplay.add(FileUi(this, f.name))
-        }
+
+        for(f in dirs) fileDisplay.add(FolderUi(this, f.name))
+
+        for(f in files) fileDisplay.add(FileUi(this, f.name))
+
         add(fileDisplay, BorderLayout.CENTER)
-        caller.revalidate()
     }
 
     fun downloadFile(remote: String, local: String) {
