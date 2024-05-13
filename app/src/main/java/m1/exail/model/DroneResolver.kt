@@ -1,10 +1,12 @@
 package m1.exail.model
 
+import m1.exail.controller.controllerInstance
 import java.io.IOException
 import java.net.*
 import java.util.*
 
-private fun getNetworkBroadcastAddress(): InetAddress {
+private fun getNetworkBroadcastAddress(): List<InetAddress> {
+    val list = mutableListOf<InetAddress>()
     // récupère la liste des interfaces réseau
     val interfaces = Collections.list(NetworkInterface.getNetworkInterfaces())
     for (netInterface in interfaces) {
@@ -16,43 +18,57 @@ private fun getNetworkBroadcastAddress(): InetAddress {
             val broadcast = interfaceAddress.broadcast
             // vérifie qu'on a une adresse de broadcast
             if (broadcast != null) {
-                return broadcast
+                list.add(broadcast)
             }
         }
     }
-    throw UnknownHostException("No broadcast address found")
+    return list
 }
 
-public fun getDroneAddress(): InetAddress {
+fun getDroneAddress(): List<InetAddress> {
+    val list = mutableListOf<InetAddress>()
+    var receiver: DatagramSocket? = null
     try {
-        // crée un socket UDP
-        val socket = DatagramSocket(42000)
-        socket.broadcast = true
+        val broadcastAddress = getNetworkBroadcastAddress()
+        if (broadcastAddress.isEmpty()) {
+            throw RuntimeException("Aucunes interfaces réseau utilisables")
+        }
 
-        // crée un paquet vide
+        val emitter = DatagramSocket()
+        val emitted = DatagramPacket(ByteArray(0), 0)
+        emitted.port = 42001
+        emitter.broadcast = true
+        for(addr in broadcastAddress) {
+            emitted.address = addr
+            emitter.send(emitted)
+        }
+        emitter.close()
+
+        receiver = DatagramSocket(42000)
+        receiver.soTimeout = 10000 // timeout de 10 secondes
         val buffer = ByteArray(1024)
-        val packet = DatagramPacket(buffer, buffer.size)
+        val received = DatagramPacket(buffer, buffer.size)
+        while(true) {
+            receiver.receive(received)
+            val address = received.address
+            if(address.isReachable(1000)) {
+                if(list.contains(address)) continue
+                list.add(address)
+                controllerInstance?.droneIpUpdate(list)
+            }
+        }
 
-        // envoie le paquet sur l'adresse de broadcast
-        val broadcastAddress: InetAddress = getNetworkBroadcastAddress()
-        packet.address = broadcastAddress
-        packet.port = 42001
-        socket.send(packet)
-
-
-        // met le socket en mode écoute
-        socket.soTimeout = 10000
-
-        // attend de recevoir un paquet
-        socket.receive(packet)
-        println("Received packet from: " + packet.address)
-        return packet.address
+    } catch (e: SocketTimeoutException) { // on arrive au bout du timeout
+        receiver?.close()
+        if (list.isEmpty()) { // si on n'a pas trouvé de drone
+            throw RuntimeException("Drone did not respond in time")
+        } else { // sinon on retourne la liste
+            return list
+        }
     } catch (e: SocketException) { // erreur lors de la création du socket
         println("Error: " + e.message)
         throw RuntimeException("Could not open Socket on port 42000")
-    } catch (e: SocketTimeoutException) { // le drone n'a pas répondu à temps
-        throw RuntimeException("Drone did not respond in time")
-    } catch (e: java.rmi.UnknownHostException) {
+    }  catch (e: UnknownHostException) { // erreur lors de la résolution de l'adresse
         println("Error: " + e.message)
         throw RuntimeException("Could not find broadcast address")
     } catch (e: IOException) { // erreur lors de la réception du paquet

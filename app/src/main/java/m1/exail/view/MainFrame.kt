@@ -6,23 +6,23 @@ import java.awt.BorderLayout
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeSupport
+import java.lang.Exception
+import java.net.InetAddress
 import javax.swing.JFrame
-import kotlin.properties.Delegates
 
 class MainFrame : JFrame(), PropertyChangeListener {
     val pcs = PropertyChangeSupport(this)
 
-    var ftpPath: String? by Delegates.observable(null) { _, _, newValue ->
-        fileExplorer.setPathDisplayText(newValue ?: "/")
+    fun addEventListener(listener: PropertyChangeListener) {
+        pcs.addPropertyChangeListener(listener)
     }
 
-    private var droneIp: String? by Delegates.observable(null) { _, _, newValue ->
-        topBar.setDroneStatus(newValue, null, null)
+    fun removeEventListener(listener: PropertyChangeListener) {
+        pcs.removePropertyChangeListener(listener)
     }
-
 
     private val topBar = TopBar(this)
-    private val fileExplorer = FileExplorer(this)
+    private var fileExplorer = FileExplorer(this)
 
     init {
         title = "Exail Drone Communication Software"
@@ -35,26 +35,39 @@ class MainFrame : JFrame(), PropertyChangeListener {
         revalidate()
     }
 
-    fun downloadFile(origin: String, target: String) {
-        pcs.firePropertyChange(Controller.FTP_FILE_DOWNLOAD, origin, target)
-    }
-
-    fun uploadFile(origin: String, target: String) {
-        pcs.firePropertyChange(Controller.FTP_FILE_UPLOAD, origin, target)
-    }
-
     override fun propertyChange(evt: PropertyChangeEvent?) {
-        println("MainFrame received event: ${evt?.propertyName}")
+        println("MainFrame received event: ${evt?.propertyName} from ${evt?.source}")
         when (evt?.propertyName) {
             Controller.DRONE_IP_CHANGED -> {
-                droneIp = evt.newValue as String
+                if(evt.newValue is Exception){
+                    topBar.setDroneStatus(evt.newValue as Exception)
+                } else {
+                    // Warning de "unchecked cast", à voir si on peut arranger ça, mais ça devrait fonctionner
+                    topBar.setDroneStatus(evt.newValue as List<InetAddress>)
+                }
+            }
+            Controller.FTP_CONNECTED -> {
+                if(evt.newValue == null){
+                    topBar.setDroneStatus(Exception(""))
+                    remove(fileExplorer)
+                    fileExplorer = FileExplorer(this)
+                    add(fileExplorer, BorderLayout.CENTER)
+                } else {
+                    topBar.setDroneStatus(evt.newValue as InetAddress)
+                    fileExplorer.setFileList(emptyList())
+                    fileExplorer.path = "/"
+                }
             }
             Controller.CONNECTION_SPEED_CHANGED -> {
-                topBar.setInformationLabelText(evt.newValue as Double)
+                val uploadSpeed = (evt.newValue as Pair<*, *>).first as Double
+                val downloadSpeed = (evt.newValue as Pair<*, *>).second as Double
+                topBar.setDroneStatus(uploadSpeed, downloadSpeed)
             }
             Controller.FTP_FILE_LIST_CHANGED -> {
-                // Warning de "unchecked cast", à voir si on peut régler ça, mais ça devrait fonctionner
+                assert(evt.newValue is List<*>)
+                assert((evt.newValue as List<*>).all { it is FTPFile })
                 fileExplorer.setFileList(evt.newValue as List<FTPFile>)
+                pcs.firePropertyChange(Controller.CONNECTION_SPEED_REQUEST, null, null)
             }
         }
     }
