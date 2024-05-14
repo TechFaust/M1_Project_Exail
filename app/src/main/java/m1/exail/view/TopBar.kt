@@ -125,10 +125,10 @@ class TopBar(val caller: MainFrame ) : JPanel() {
 
     private fun scale(value: Double): String {
         return when {
-            value < 1_000 -> "${floor(value)} B/s"
-            value < 1_000_000 -> "${floor(value / 1_000)} KB/s"
-            value < 1_000_000_000 -> "${floor(value / 1_000_000)} MB/s"
-            else -> "${floor(value / 1_000_000_000)} GB/s"
+            value < 1_000 -> "${floor(value)} bps"
+            value < 1_000_000 -> "${floor(value / 1_000)} Kbps"
+            value < 1_000_000_000 -> "${floor(value / 1_000_000)} Mbps"
+            else -> "${floor(value / 1_000_000_000)} Gbps"
         }
     }
 

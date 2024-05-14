@@ -26,9 +26,8 @@ class Controller: PropertyChangeListener {
         const val FTP_FILE_LIST_CHANGED = "ftpFileListChanged"  // event de changement de liste de fichiers FTP
 
         const val FTP_FILE_DOWNLOAD = "ftpFileDownload"  // event de téléchargement de fichier FTP
-        const val FTP_FILE_DOWNLOADED = "ftpFileDownloaded"  // event de fin de téléchargement de fichier FTP
         const val FTP_FILE_UPLOAD = "ftpFileUpload"  // event de téléversement de fichier FTP
-        const val FTP_FILE_UPLOADED = "ftpFileUploaded"  // event de fin de téléversement de fichier FTP
+        const val FTP_CREATE_FOLDER = "ftpCreateFolder"  // event de création de dossier FTP
     }
 
     init {

@@ -9,7 +9,9 @@ import java.util.zip.ZipFile
 
 
 private fun WINDOWS_getSpeed(ip: InetAddress, port: Int): Pair<Double, Double> {
-    if(!File("app/src/main/resources/iperf3/iperf3.exe").exists()) {
+    val processName = "app/src/main/resources/iperf3/iperf3.exe"
+    if(!File(processName).exists()) {
+        println("Downloading iperf3 for Windows")
         val urlGitHub = "https://github.com/ar51an/iperf3-win-builds/releases/download/3.16/iperf-3.16-win64.zip"
         // télécharger et extraire le zip
         val stream = URL.of(URI(urlGitHub), null).openStream()
@@ -24,15 +26,26 @@ private fun WINDOWS_getSpeed(ip: InetAddress, port: Int): Pair<Double, Double> {
         zip.delete()
     }
 
-    val processName = "app/src/main/resources/iperf3/iperf3.exe"
     return iperf3ProcessHandler(ProcessBuilder(processName, "-c", ip.hostAddress, "-p", port.toString(), "-J"))
 }
 
-private fun POSIX_getSpeed(ip: InetAddress, port: Int): Pair<Double, Double> {
+private fun MACOS_getSpeed(ip: InetAddress, port: Int): Pair<Double, Double> {
     val iperfFinder = ProcessBuilder("which", "iperf3").start()
     if(iperfFinder.exitValue() != 0){
-        val proc = ProcessBuilder("sudo", "apt-get", "install", "iperf3").start()
+        val proc = ProcessBuilder("brew", "install", "iperf3").start()
         proc.waitFor()
+    }
+    return iperf3ProcessHandler(ProcessBuilder("iperf3", "-c", ip.hostAddress, "-p", port.toString(), "-J"))
+}
+
+private fun LINUX_getSpeed(ip: InetAddress, port: Int): Pair<Double, Double> {
+    val iperfFinder = ProcessBuilder("which", "iperf3").start()
+    if(iperfFinder.exitValue() != 0){
+        var proc = ProcessBuilder("sudo", "apt", "update").start()
+        proc.waitFor()
+        proc = ProcessBuilder("sudo", "apt", "install", "iperf3").start()
+        proc.waitFor()
+
     }
     return iperf3ProcessHandler(ProcessBuilder("iperf3", "-c", ip.hostAddress, "-p", port.toString(), "-J"))
 }
@@ -50,18 +63,17 @@ private fun iperf3ProcessHandler(process: ProcessBuilder): Pair<Double, Double> 
 }
 
 fun getSpeed(ip: InetAddress, port: Int): Pair<Double, Double> {
-    println("getSpeed(${ip.hostAddress}, $port) on ${System.getProperty("os.name")} system")
     val os = System.getProperty("os.name")
+    println("OS: $os")
+
     if(os.contains("Windows"))
         return WINDOWS_getSpeed(ip, port)
 
     if(os.contains("Linux"))
-        return POSIX_getSpeed(ip, port)
+        return LINUX_getSpeed(ip, port)
 
-    return when(System.getProperty("os.name")) {
-        "Linux" -> POSIX_getSpeed(ip, port)
-        "Mac OS X" -> POSIX_getSpeed(ip, port)
-        "Windows" -> WINDOWS_getSpeed(ip, port)
-        else -> Pair(0.0, 0.0)
-    }
+    if(os.contains("Mac"))
+        return MACOS_getSpeed(ip, port)
+
+    throw RuntimeException("Unsupported OS: $os")
 }

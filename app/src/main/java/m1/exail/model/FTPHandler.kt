@@ -55,6 +55,14 @@ class FTPHandler(private val address: InetAddress, port: Int = 21) : PropertyCha
                 val target = File(local)
                 client.storeFile(remote, target.inputStream())
             }
+            Controller.FTP_CREATE_FOLDER -> {
+                val remote = evt.newValue as String
+                println("Creating folder \"$remote\"")
+                client.changeWorkingDirectory("${remote.substringBeforeLast('/')}/")
+                if(!client.makeDirectory(remote.substringAfterLast('/'))){
+                    println("Failed to create folder")
+                }
+            }
             Controller.CONNECTION_SPEED_REQUEST -> {
                 val speed = getSpeed(address, 20000)
                 pcs.firePropertyChange(Controller.CONNECTION_SPEED_CHANGED, null, speed)
